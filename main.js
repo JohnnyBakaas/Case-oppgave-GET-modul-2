@@ -206,7 +206,7 @@ const headerRender = () => {
   headderView += `<div class="sorting">`;
   headderView += `<div onclick="genreViewTogle()">Sjanger</div>`;
   headderView += `<div onclick="sortingFavorit()">Favoritter</div>`;
-  headderView += `<div>Sett</div>`;
+  headderView += `<div onclick="sortingWatched()" >Sett</div>`;
 
   headderView += `</div>`;
 
@@ -310,6 +310,16 @@ const sortingGenre = (ganre) => {
   mainViewRender();
 };
 
+const sortingWatched = () => {
+  sortingClear();
+  for (let i = 0; i < movies.length; i++) {
+    if (users[userSelect].watched[i]) {
+      moviesSelected.push(i);
+    }
+  }
+  console.log(moviesSelected);
+  mainViewRender();
+};
 //start up
 
 generateGenreList();
