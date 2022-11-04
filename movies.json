@@ -1,0 +1,22 @@
+[
+    {
+      "name": "Inglourious Basterds",
+      "picture": "img/inglourious basterds.png",
+      "watched": true,
+      "favorite": true,
+      "description": "Dette er en flott film",
+      "rating": 10,
+      "genre": ["Action", "Krig"]
+    },
+    {
+      "name": "Pulp Fiction",
+      "picture": "place holder",
+      "watched": true,
+      "favorite": true,
+      "description": "Dette er også en flott film",
+      "rating": 10,
+      "genre": ["Thriller"]
+    }
+  ]
+
+  
