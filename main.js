@@ -247,7 +247,7 @@ const spesificViewRender = (userSelect) => {
 const genreViewRender = () => {
   let genreView = `<div class="genreView">`;
   for (let i = 0; i < genreList.length; i++) {
-    genreView += `<div class="genre" onclick="sortingGenre(${i})"> ${genreList[i]} </div>`;
+    genreView += `<div class="genre" onclick="sortingGenre(${i}, this)"> ${genreList[i]} </div>`;
   }
   genreView += `</div>`;
   document.getElementById("genreViewRender").innerHTML = genreView;
@@ -298,7 +298,7 @@ const genreViewTogle = () => {
   }
 };
 
-const sortingGenre = (ganre) => {
+const sortingGenre = (ganre, id) => {
   sortingClear();
   for (let i = 0; i < movies.length; i++) {
     if (movies[i].genre.includes(genreList[ganre])) {
@@ -307,7 +307,9 @@ const sortingGenre = (ganre) => {
       console.log(genreList[ganre]);
     }
   }
+
   mainViewRender();
+  id.classList.add("selected");
 };
 
 const sortingWatched = () => {
@@ -326,3 +328,17 @@ generateGenreList();
 console.log(genreList);
 headerRender();
 mainViewRender();
+
+//TODO
+/*
+legg til farger til den sjangeren som er valgt
+samme med om du har valgt favoritter eller sett
+
+legge til funksjonalitet for knapper som er under bildt når du går inn på en film
+
+logginn funksjonalitet
+registrer bruker funksjonalitet
+
+
+
+*/
