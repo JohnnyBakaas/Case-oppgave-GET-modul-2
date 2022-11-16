@@ -122,35 +122,40 @@ const model = {
   watched: [{ userId: 0, movieId: 0, isFavorite: true }],
 
   userSelected: false,
-  genreList: [], // genereres av en funksjon
+  userSelectedId: -1,
+  genreList: [],
   genreSelected: [], //ekskluderende, hvis to sjangere blir valgt vises bare &&, ikke ||
-  displyMovies: [0, 1, 2, 3, 4, 5, 6],
+  displyMovies: [],
 
   header: {
     logo: "🍅",
     name: "Fresh Tomatoes",
     sorting: "Sorter",
-    favorites: false,
-    watched: false,
-    loggedInn: false,
   },
 };
 
 function view() {
   this.header = () => {
     let theHTML = `
-    <h1>
-      ${model.header.logo}
-      ${model.header.name}
-    </h1>
     <div>
+      <h1 onclick="updateView.displaySelection();">
+        ${model.header.logo}
+        ${model.header.name}
+      </h1>
       ${controll.selectName()}
     </div>
+    <div> Sjanger </div>
+    <div> Favoritter </div>
+    <div> Sett </div>
     `;
+    //legg til sjanger knapp og favoritt knapp
     document.getElementById("header").innerHTML = theHTML;
   };
 
-  // legg til sjanger greier
+  this.genreSelector = () => {
+    //legg til fine firkanter
+    let theHTML;
+  };
 
   const updateRoot = (root) => {
     document.getElementById("root").innerHTML = root;
@@ -159,13 +164,7 @@ function view() {
   this.displaySelection = () => {
     let theHTML = "";
     for (let i = 0; i < model.displyMovies.length; i++) {
-      theHTML += `<div class="card" onclick="updateView.displayMovie(${
-        model.movies[model.displyMovies[i]].id
-      })"> <img src="${model.movies[model.displyMovies[i]].picture}"alt"${
-        model.movies[model.displyMovies[i]].name
-      } /> <div class="rating"> ${
-        model.movies[model.displyMovies[i]].rating
-      }/10 </div></div>`;
+      theHTML += `<div class="card" onclick="updateView.displayMovie(${model.displyMovies[i].id})"> <img src="${model.displyMovies[i].picture}"alt"${model.displyMovies[i].name} /> <div class="rating"> ${model.displyMovies[i].rating}/10 </div></div>`;
     }
     updateRoot(theHTML);
   };
@@ -175,7 +174,7 @@ function view() {
     for (let i = 0; i < obj.genre.length; i++) {
       outputGemre += `<div> ${obj.genre[i]} </div>`;
     }
-    console.log(outputGemre);
+
     return outputGemre;
   };
 
@@ -191,7 +190,8 @@ function view() {
       <div>
         <img src="${result.picture}"alt"${result.name} />
         <div>
-          legg til knapper for sett og favoritt her
+          ${controll.watchedButton(result.id)}
+          ${controll.favoriteButton(result.id)}
           ${genreMovie(result)}
         </div>
       </div>
@@ -199,13 +199,12 @@ function view() {
     </div>
     `;
     //this.updateMain(theHTML);
-    console.log(result);
     updateRoot(movie);
   };
 
   this.loggInn = () => {
-    let theHTML = `
-    <div class"loggInnPage">
+    let theHTML = /*HTML*/ `
+    <div class="loggInnPage">
 
     <div>
     <label for="uname"><b>Username</b></label>
@@ -218,6 +217,7 @@ function view() {
     </div>
 
     <button type="submit" class="loggInnPageForum" onclick="controll.checkLoggeInn()">Login</button>
+    <button type="submit" class="loggInnPageForum" onclick="updateView.createAcount()">Ny her?</button>
 
     </div>
     `;
@@ -259,11 +259,9 @@ function controller() {
       for (let j = 0; j < model.movies[i].genre.length; j++) {
         if (!model.genreList.includes(model.movies[i].genre[j])) {
           model.genreList.push(model.movies[i].genre[j]);
-          console.log(model.movies[i].genre[j]);
         }
       }
     }
-    console.log(model.genreList);
   };
 
   this.checkLoggeInn = () => {
@@ -274,6 +272,7 @@ function controller() {
       if (userName == model.users[i].username) {
         if (pasword == model.users[i].pasword) {
           model.userSelected = model.users[i].username;
+          model.userSelectedId = model.users[i].id;
         }
       }
     }
@@ -317,15 +316,125 @@ function controller() {
       alert("Brukernavnet er tatt");
     }
   };
+
+  this.selectAll = () => {
+    for (let i = 0; i < model.movies.length; i++) {
+      model.displyMovies.push(model.movies[i]);
+    }
+  };
+  //watched: [{ userId: 0, movieId: 0, isFavorite: true }],
+  this.selectFavorites = () => {
+    for (let i = 0; i < model.watched.length; i++) {
+      for (let j = 0; j < model.movies.length; j++) {
+        if (model.watched[i].movieId === model.movies[j].id) {
+          if (model.watched[i].isFavorite)
+            model.displyMovies.push(model.movies[j]);
+        }
+      }
+    }
+  };
+
+  this.addToWatched = (movieId) => {
+    if (!model.userSelected) {
+      updateView.loggInn();
+      return;
+    }
+
+    for (let i = 0; i < model.watched.length; i++) {
+      if (
+        model.watched[i].movieId == movieId &&
+        model.watched[i].userId == model.userSelectedId
+      ) {
+        model.watched.splice(i, 1);
+        updateView.displayMovie(movieId);
+        return;
+      }
+    }
+
+    model.watched.push({
+      userId: model.userSelectedId,
+      movieId: movieId,
+      isFavorite: false,
+    });
+    updateView.displayMovie(movieId);
+  };
+
+  this.addToFavorite = (movieId) => {
+    if (!model.userSelected) {
+      updateView.loggInn();
+      return;
+    }
+
+    let pushNew = true;
+
+    for (let i = 0; i < model.watched.length; i++) {
+      if (
+        model.watched[i].userId == model.userSelectedId &&
+        model.watched[i].movieId == movieId
+      ) {
+        pushNew = false;
+      }
+    }
+
+    if (pushNew) {
+      model.watched.push({
+        userId: model.userSelectedId,
+        movieId: movieId,
+        isFavorite: true,
+      });
+      updateView.displayMovie(movieId);
+      return;
+    }
+
+    for (let i = 0; i < model.watched.length; i++) {
+      if (movieId == model.watched[i].movieId) {
+        model.watched[i].isFavorite = !model.watched[i].isFavorite;
+      }
+    }
+
+    updateView.displayMovie(movieId);
+  };
+
+  this.watchedButton = (movieId) => {
+    let outputText = "Legg til har sett";
+    let backgroundColor = "";
+    for (let i = 0; i < model.watched.length; i++) {
+      if (
+        movieId == model.watched[i].movieId &&
+        model.watched[i].userId == model.userSelectedId
+      ) {
+        outputText = "Fjern har sett";
+        backgroundColor = "yellowBackground";
+      }
+    }
+    return `<button class="${backgroundColor}" onclick="controll.addToWatched(${movieId})">${outputText}</button>`;
+  };
+
+  this.favoriteButton = (movieId) => {
+    let outputText = "Legg til i favoritter";
+    let backgroundColor = "";
+    for (let i = 0; i < model.watched.length; i++) {
+      if (
+        model.watched[i].isFavorite &&
+        movieId == model.watched[i].movieId &&
+        model.watched[i].userId == model.userSelectedId
+      ) {
+        outputText = "Fjern fra favoritter";
+        backgroundColor = "yellowBackground";
+        //<button class="${controll.selectBackgroundYellowFavorite(result.id)}" onclick="controll.addToFavorite(${result.id})">Legg til favorit</button>
+      }
+    }
+    return `<button class="${backgroundColor}" onclick="controll.addToFavorite(${movieId})">${outputText}</button>`;
+  };
 }
 
 // Start up
 
 const controll = new controller();
 controll.makeGenreList();
+controll.selectAll();
 
 const updateView = new view();
 updateView.displaySelection();
-updateView.loggInn();
-updateView.createAcount();
+
 updateView.header();
