@@ -1,5 +1,7 @@
 "use strict";
 
+//TODO når man går inn på en film vises favoritter for andre brukere, når man trykker på favoritt knappen eller sett knappen resetter den ting når den ikke skal
+
 const model = {
   movies: [
     {
@@ -121,11 +123,13 @@ const model = {
   ],
   watched: [{ userId: 0, movieId: 0, isFavorite: true }],
 
-  userSelected: false,
-  userSelectedId: -1,
+  userSelected: undefined,
+  userSelectedId: undefined,
   genreList: [],
-  genreSelected: [], //ekskluderende, hvis to sjangere blir valgt vises bare &&, ikke ||
+  genreSelected: null,
   displyMovies: [],
+
+  togleFavorite: false,
 
   header: {
     logo: "🍅",
@@ -144,17 +148,41 @@ function view() {
       </h1>
       ${controll.selectName()}
     </div>
-    <div> Sjanger </div>
-    <div> Favoritter </div>
-    <div> Sett </div>
+    <div onclick="updateView.genreSelector()"> Sjanger </div>
+    <div onclick="controll.favoriteTogle()"> Favoritter </div>
+    <div onclick="controll.watchedTogle()"> Sett </div>
     `;
-    //legg til sjanger knapp og favoritt knapp
+
     document.getElementById("header").innerHTML = theHTML;
   };
 
+  this.updateGenreSelectior = () => {
+    const genreView = document.getElementById("genreViewRender");
+    let theHTML = "<div>";
+    for (let i = 0; i < model.genreList.length; i++) {
+      theHTML += controll.generateSelectGenreButton(model.genreList[i]);
+    }
+    theHTML += "</div>";
+    genreView.innerHTML = theHTML;
+    updateView.displaySelection();
+  };
+
   this.genreSelector = () => {
-    //legg til fine firkanter
-    let theHTML;
+    const genreView = document.getElementById("genreViewRender");
+    let theHTML = "<div>";
+
+    if (!genreView.innerHTML) {
+      for (let i = 0; i < model.genreList.length; i++) {
+        theHTML += controll.generateSelectGenreButton(model.genreList[i]);
+      }
+      theHTML += "</div>";
+      genreView.innerHTML = theHTML;
+      updateView.displaySelection();
+      return;
+    }
+
+    genreView.innerHTML = "";
+    updateView.displaySelection();
   };
 
   const updateRoot = (root) => {
@@ -179,16 +207,14 @@ function view() {
   };
 
   this.displayMovie = (id) => {
-    var result = model.movies.find((obj) => {
-      return obj.id === id;
-    });
+    var result = model.movies.find((obj) => obj.id === id);
     let movie = /*HTML*/ `
     <div> 
       <div class="title"> 
         <h1> ${result.name} </h1> <h1> ${result.rating}/10 </p>
       </div>
       <div>
-        <img src="${result.picture}"alt"${result.name} />
+        <img src="${result.picture}" alt="${result.name}" />
         <div>
           ${controll.watchedButton(result.id)}
           ${controll.favoriteButton(result.id)}
@@ -284,10 +310,10 @@ function controller() {
   };
 
   const generateNewId = () => {
-    let lastId = model.users[model.users.length - 1].id;
+    let lastId = 0;
     for (let i = 0; i < model.users.length; i++) {
-      if (lastId < model.users[i].id) {
-        lastId++;
+      if (lastId <= model.users[i].id) {
+        lastId = model.users[i].id + 1;
       }
     }
     return lastId;
@@ -310,6 +336,7 @@ function controller() {
         id: lastId,
       });
       model.userSelected = newUserName;
+      model.userSelectedId = lastId;
       updateView.displaySelection();
       updateView.header();
     } else {
@@ -387,7 +414,10 @@ function controller() {
     }
 
     for (let i = 0; i < model.watched.length; i++) {
-      if (movieId == model.watched[i].movieId) {
+      if (
+        movieId == model.watched[i].movieId &&
+        model.userSelectedId == model.watched[i].userId
+      ) {
         model.watched[i].isFavorite = !model.watched[i].isFavorite;
       }
     }
@@ -421,10 +451,93 @@ function controller() {
       ) {
         outputText = "Fjern fra favoritter";
         backgroundColor = "yellowBackground";
-        //<button class="${controll.selectBackgroundYellowFavorite(result.id)}" onclick="controll.addToFavorite(${result.id})">Legg til favorit</button>
       }
     }
     return `<button class="${backgroundColor}" onclick="controll.addToFavorite(${movieId})">${outputText}</button>`;
+  };
+
+  this.favoriteTogle = () => {
+    if (!model.userSelected) {
+      updateView.loggInn();
+      return;
+    }
+
+    model.displyMovies.length = 0;
+
+    if (!model.togleFavorite) {
+      model.togleFavorite = !model.togleFavorite;
+      controll.selectAll();
+      updateView.displaySelection();
+      return;
+    }
+
+    model.togleFavorite = !model.togleFavorite;
+    for (let i = 0; i < model.watched.length; i++) {
+      if (
+        model.watched[i].userId == model.userSelectedId &&
+        model.watched[i].isFavorite
+      ) {
+        model.displyMovies.push(model.movies[i]);
+      }
+    }
+    updateView.displaySelection();
+  };
+
+  this.watchedTogle = () => {
+    if (!model.userSelected) {
+      updateView.loggInn();
+      return;
+    }
+
+    model.displyMovies.length = 0;
+
+    if (!model.togleFavorite) {
+      model.togleFavorite = !model.togleFavorite;
+      controll.selectAll();
+      updateView.displaySelection();
+      return;
+    }
+
+    model.togleFavorite = !model.togleFavorite;
+    for (let i = 0; i < model.watched.length; i++) {
+      if (model.watched[i].userId == model.userSelectedId) {
+        model.displyMovies.push(model.movies[i]);
+      }
+    }
+    updateView.displaySelection();
+  };
+
+  this.selectGenre = (genre) => {
+    model.displyMovies.length = 0;
+
+    model.genreSelected = genre;
+
+    for (let i = 0; i < model.movies.length; i++) {
+      if (model.movies[i].genre.includes(genre)) {
+        model.displyMovies.push(model.movies[i]);
+      }
+    }
+    updateView.updateGenreSelectior();
+    updateView.displaySelection();
+  };
+
+  this.selectReset = () => {
+    model.genreSelected = undefined;
+    controll.selectAll();
+    updateView.displaySelection();
+    updateView.updateGenreSelectior();
+  };
+
+  this.generateSelectGenreButton = (genre) => {
+    let theHTML = /*HTML*/ `<div class="${
+      genre == model.genreSelected ? "yellowBackground" : ""
+    }"><div onclick="controll.selectGenre('${genre}')">${genre} </div>
+    ${
+      genre == model.genreSelected
+        ? `<div onclick="controll.selectReset()">✕</div>`
+        : ""
+    }</div>`;
+    return theHTML;
   };
 }
 
@@ -436,5 +549,4 @@ controll.selectAll();
 
 const updateView = new view();
 updateView.displaySelection();
-
 updateView.header();
