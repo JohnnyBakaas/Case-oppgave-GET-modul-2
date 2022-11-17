@@ -345,6 +345,7 @@ function controller() {
   };
 
   this.selectAll = () => {
+    model.displyMovies.length = 0;
     for (let i = 0; i < model.movies.length; i++) {
       model.displyMovies.push(model.movies[i]);
     }
